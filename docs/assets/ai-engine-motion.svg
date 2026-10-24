@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="344" viewBox="0 0 960 344" role="img" aria-labelledby="title description">
+  <title id="title">Puffx AI Engine animated request flow</title>
+  <desc id="description">A client sends a secure request to the Puffx gateway, which routes it to local Ollama or a remote AI provider and streams the answer back.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07111f"/><stop offset="1" stop-color="#111d35"/></linearGradient>
+    <linearGradient id="accent" x1="0" x2="1"><stop stop-color="#42d6ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#172840"/><stop offset="1" stop-color="#101c30"/></linearGradient>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#8ba6c4" stroke-opacity=".06"/></pattern>
+    <style>
+      .label{font:600 11px 'Segoe UI',Arial,sans-serif;letter-spacing:1.5px;fill:#8ba6c4}
+      .title{font:700 17px 'Segoe UI',Arial,sans-serif;fill:#f4f8ff}
+      .copy{font:13px 'Segoe UI',Arial,sans-serif;fill:#a8bad0}
+      .tiny{font:11px 'Segoe UI',Arial,sans-serif;fill:#90a7c2}
+      .route{fill:none;stroke:#55708e;stroke-width:2;stroke-dasharray:5 8;stroke-linecap:round}
+      .packet{filter:url(#glow);animation:travel 3.8s linear infinite}
+      .packet.back{animation:travelBack 3.8s linear infinite;animation-delay:1.9s}
+      .pulse{transform-box:fill-box;transform-origin:center;animation:pulse 2s ease-in-out infinite}
+      .orbit{transform-box:fill-box;transform-origin:center;animation:spin 14s linear infinite}
+      @keyframes travel{0%{transform:translateX(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(280px);opacity:0}}
+      @keyframes travelBack{0%{transform:translateX(280px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(0);opacity:0}}
+      @keyframes pulse{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1.18)}}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      @media(prefers-reduced-motion:reduce){.packet,.pulse,.orbit{animation:none!important}.packet{opacity:.9}}
+    </style>
+  </defs>
+  <rect width="960" height="344" rx="24" fill="url(#bg)"/>
+  <rect width="960" height="344" rx="24" fill="url(#grid)"/>
+  <circle cx="782" cy="72" r="120" fill="#755bff" opacity=".07"/>
+  <circle cx="164" cy="290" r="115" fill="#28c5ea" opacity=".05"/>
+  <text x="40" y="46" class="label" fill="#62d8f4">PUFFX AI ENGINE</text>
+  <text x="40" y="78" class="title" font-size="23">One gateway. Your choice of AI runtime.</text>
+  <text x="40" y="101" class="copy">Authenticate once, route locally or remotely, and stream responses back.</text>
+
+  <path class="route" d="M218 195H370"/><path class="route" d="M590 195H742"/>
+  <circle class="packet" cx="218" cy="195" r="4" fill="#61e5ff"/>
+  <circle class="packet back" cx="218" cy="195" r="3" fill="#c4b5fd"/>
+  <circle class="packet" cx="590" cy="195" r="4" fill="#61e5ff" style="animation-delay:1.9s"/>
+  <circle class="packet back" cx="590" cy="195" r="3" fill="#c4b5fd" style="animation-delay:3.8s"/>
+
+  <rect x="40" y="145" width="178" height="100" rx="16" fill="url(#card)" stroke="#2a405b"/>
+  <circle cx="72" cy="178" r="15" fill="#173b53"/><path d="M65 178h14M72 171v14" stroke="#66dcf5" stroke-width="2" stroke-linecap="round"/>
+  <text x="96" y="178" class="title">Your app</text><text x="58" y="215" class="copy">Bearer key · OpenAI-style API</text>
+
+  <rect x="370" y="137" width="220" height="116" rx="18" fill="url(#card)" stroke="url(#accent)" stroke-width="1.5"/>
+  <rect x="386" y="153" width="32" height="32" rx="10" fill="#183d55"/><path d="M394 169h16m-8-8v16" stroke="#65ddf6" stroke-width="2" stroke-linecap="round"/>
+  <text x="428" y="168" class="title">Puffx gateway</text><text x="390" y="207" class="copy">Auth · routing · SSE stream</text>
+  <rect x="390" y="223" width="178" height="4" rx="2" fill="#273b54"/><rect class="pulse" x="390" y="223" width="48" height="4" rx="2" fill="url(#accent)"/>
+
+  <rect x="742" y="139" width="178" height="112" rx="16" fill="url(#card)" stroke="#2a405b"/>
+  <g class="orbit"><circle cx="774" cy="171" r="13" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="3 4"/></g>
+  <circle cx="774" cy="171" r="8" fill="#4b3e83"/><path d="M770 171h8m-4-4v8" stroke="#e5ddff" stroke-width="1.4" stroke-linecap="round"/>
+  <text x="798" y="175" class="title">AI provider</text>
+  <circle cx="760" cy="207" r="3" fill="#42d6ff"/><text x="770" y="211" class="copy">Ollama · local</text>
+  <circle cx="760" cy="230" r="3" fill="#b49cff"/><text x="770" y="234" class="copy">Remote · compatible API</text>
+
+  <text x="40" y="300" class="label">REQUEST</text><text x="117" y="300" class="tiny">Your app sends a prompt</text>
+  <text x="370" y="300" class="label">ROUTE</text><text x="425" y="300" class="tiny">Puffx validates and forwards it</text>
+  <text x="742" y="300" class="label">RESPONSE</text><text x="820" y="300" class="tiny">Tokens stream back</text>
+  <text x="40" y="326" class="tiny">Self-host the gateway. Keep model hosting and credentials under your control.</text>
+</svg>
