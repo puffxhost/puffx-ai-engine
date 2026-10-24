@@ -48,6 +48,9 @@ puffx-ai-engine/
 
 The API process and Ollama are separate. The API sends inference requests to Ollama; Ollama owns its model cache. Model weights are not stored in Git. In VPS Compose, the model cache is a named Docker volume. In Windows mode, Ollama stores models in its own user-managed location.
 
+![Puffx AI Engine request flow](docs/assets/architecture.svg)
+
+
 ## Choose a deployment mode
 
 | Mode | Where the API runs | Where inference runs | Suitable when |
@@ -114,7 +117,7 @@ Invoke-RestMethod http://127.0.0.1:8000/health | Format-List
 
 Check that `backend` is `ollama` and `model_available` is `True`. A successful HTTP health response alone does not mean the model is loaded; `model_available` comes from Ollama's live model list.
 
-Open the admin page at [http://127.0.0.1:8000/admin/ui/](http://127.0.0.1:8000/admin/ui/). Enter the `ADMIN_PASSWORD` value as the admin bearer password, then load live status and usage. The admin page is served by the local API; it is not a separate web server.
+Open the admin page at [http://127.0.0.1:8000/admin/ui/](http://127.0.0.1:8000/admin/ui/). Enter the `ADMIN_PASSWORD` value (not `API_KEY`) as the admin bearer password and select **Connect**. The dashboard then loads backend/model status, available models, request totals, recent activity, and generated keys. The password remains in the current tab and is not saved in local storage. The page is served by the local API; it is not a separate web server.
 
 ### 5. Optional: start when Windows starts
 
@@ -311,7 +314,7 @@ A missing/bad client key returns 401. Invalid request shapes return 422. Provide
 
 ## Admin page and API keys
 
-The admin UI is served at `/admin/ui/` by FastAPI. It does not store the admin password in its source files; enter it for the session when you use the page. Use HTTPS for remote access and limit access through your reverse proxy/firewall.
+The admin UI is served at `/admin/ui/` by FastAPI. It includes an animated engine illustration, live backend/model/request cards, model discovery, recent usage, and API-key creation. Motion respects the operating system reduced-motion preference. It uses local HTML/CSS/JavaScript assets and no external image or font service. It does not store the admin password in its source files; enter it for the session when you use the page. Use HTTPS for remote access and limit access through your reverse proxy/firewall.
 
 To create a separate key for an application, call `POST /admin/keys?label=application-name` with `Authorization: Bearer <ADMIN_PASSWORD>`. Copy the returned `key` at that time; it is not recoverable later because only its SHA-256 hash is stored. The `id` is safe to use for revocation. Static `API_KEY` is read from protected configuration and is not stored in the keys table.
 
@@ -420,4 +423,3 @@ Official site: [puffxhost.com](https://puffxhost.com/)
 ---
 
 Made with ❤️ by Nitin Mehta.
-
