@@ -1,0 +1,5 @@
+# Linux VPS deployment
+
+Supported target: 64-bit Ubuntu/Debian with Docker Engine and Compose plugin. Check `free -h`, `df -h`, and `uname -m` before installing. Model RAM/disk needs vary by model and context; provision headroom. GPU requires compatible hardware, drivers, and runtime and is not promised by this CPU-oriented compose file.
+
+Copy `.env.example` to `.env`, set long random `API_KEY` and `ADMIN_PASSWORD`, and choose remote or colocated Ollama. Compose binds the API to 127.0.0.1 and does not publish Ollama. Configure Nginx TLS using Certbot, firewall all inference ports, and check `/health`. Use `docker compose logs -f`, `docker compose restart`, `docker compose down`, and rebuild for upgrades. Back up the named `puffx-data` volume and `.env` separately; never put `.env` in backups accessible publicly. Roll back by restoring the prior image/tag and database backup. Production deployment still requires operator review of proxy headers, firewall, TLS, secrets, and resource sizing.

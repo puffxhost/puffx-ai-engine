@@ -1,0 +1,16 @@
+[Unit]
+Description=Puffx AI Engine API
+After=network.target ollama.service
+[Service]
+User=puffx
+Group=puffx
+WorkingDirectory=/opt/puffx-ai-engine
+EnvironmentFile=/opt/puffx-ai-engine/.env
+ExecStart=/opt/puffx-ai-engine/.venv/bin/uvicorn api.app:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/opt/puffx-ai-engine
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,1 @@
+const r=await fetch((process.env.PUFFX_URL||'http://127.0.0.1:8000')+'/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${process.env.PUFFX_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Hello'}]})});if(!r.ok)throw Error(`HTTP ${r.status}`);console.log((await r.json()).choices[0].message.content);
