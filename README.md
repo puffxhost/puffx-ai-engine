@@ -420,3 +420,7 @@ Official site: [puffxhost.com](https://puffxhost.com/)
 ---
 
 Made with ❤️ by Nitin Mehta.
+
+## 📜 License
+
+This project’s app code is licensed under the MIT License. See the [LICENSE](LICENSE) file for full details. Model weights have separate license terms; see the model license section above.
