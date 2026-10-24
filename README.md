@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 7255)
-Total output lines: 473
-
 # Puffx AI Engine
 ### A self-hosted API gateway for local and remote AI models
 
@@ -126,7 +123,7 @@ git clone https://github.com/puffxhost/puffx-ai-engine.git
 Set-Location .\puffx-ai-engine
 ```
 
-This GitHub repository is private. Your GitHub account must have access to clone it. If you already downloaded the repository ZIP, extract it and open PowerShell in the extracted `puffx-ai-engine` folder instead.
+This repository is public. You can clone it over HTTPS without a GitHub login. If you already downloaded the repository ZIP, extract it and open PowerShell in the extracted `puffx-ai-engine` folder instead.
 
 ### 2. Install Python dependencies
 
@@ -166,7 +163,148 @@ Invoke-RestMethod http://127.0.0.1:8000/health | Format-List
 
 Check that `backend` is `ollama` and `model_available` is `True`. A successful HTTP health response alone does not mean the model is loaded; `model_available` comes from Ollama's live model list.
 
-Open the admin page at [http://127.0.0.1:8000/admin/ui/](http://127.0.0.1:8000/admin/ui/). Enter the `ADMIN_PASSWORD` value (not `API_KEY`) as the admin bearer password and select **Connect**. The dashboard then loads backend/model s…2255 tokens truncated…orization = "Bearer $env:PUFFX_API_KEY" }
+Open the admin page at [http://127.0.0.1:8000/admin/ui/](http://127.0.0.1:8000/admin/ui/). Enter the `ADMIN_PASSWORD` value (not `API_KEY`) as the admin bearer password and select **Connect**. The dashboard then loads backend/model status, available models, request totals, recent activity, and generated keys. The password remains in the current tab and is not saved in local storage. The page is served by the local API; it is not a separate web server.
+
+### 5. Optional: start when Windows starts
+
+The included scripts do not install a Windows service or start automatically on boot. For a persistent server, run it under a service manager you administer and keep the API bound to loopback unless you have deliberately configured a secured reverse proxy. Do not expose port 11434 (Ollama) publicly.
+
+### Windows offline behavior
+
+Offline inference is possible only after the first-time setup is complete and these are present: Python environment/dependencies, Ollama runtime, model weights, and the repository source. Turn off network access only after the model pull and package install have completed. The batch files are installers/launchers, not a standalone executable.
+
+## Linux VPS with Docker Compose
+
+See [the expanded VPS notes](docs/vps.md). The Compose deployment starts two containers: the API and Ollama. It persists the database and model cache in named Docker volumes. The host publishes only `127.0.0.1:8000`; Ollama has no public host port.
+
+### 1. Prepare the server
+
+Use a 64-bit Ubuntu/Debian VPS with Docker Engine and the Compose plugin installed. Check available resources before pulling a model:
+
+```bash
+free -h
+df -h
+uname -m
+docker --version
+docker compose version
+```
+
+Memory and disk requirements depend on model size, quantization, and context length. Leave capacity for the OS, Docker images, model cache, and inference. GPU acceleration is not configured by this Compose file; it requires compatible hardware, drivers, and a matching container runtime.
+
+### 2. Get the source onto the VPS
+
+Clone the public repository over HTTPS (or use SSH if you have configured a GitHub SSH key):
+
+```bash
+git clone https://github.com/puffxhost/puffx-ai-engine.git
+cd puffx-ai-engine
+```
+
+Do not put a personal access token directly into the clone URL or shell history.
+
+### 3. Configure and start
+
+The first installer run creates a protected `.env` and exits so you can configure it before startup:
+
+```bash
+chmod +x installers/linux-vps/install.sh
+./installers/linux-vps/install.sh
+nano .env
+```
+
+At minimum set `API_KEY`, `ADMIN_PASSWORD`, and (if needed) `MODEL_NAME`. Save the file with restricted permissions:
+
+```bash
+chmod 600 .env
+./installers/linux-vps/install.sh
+```
+
+The second run validates Compose configuration, builds/starts the containers, pulls the configured Ollama model, and prints service state. The model download can take time and uses disk space. To inspect progress later, run `docker compose logs -f ollama`.
+
+If you prefer manual commands:
+
+```bash
+docker compose config
+docker compose up -d --build
+docker compose exec -T ollama ollama pull qwen2.5:3b
+docker compose ps
+docker compose logs -f api
+```
+
+If you change `MODEL_NAME`, use that same model in the pull command. Verify with `curl -fsS http://127.0.0.1:8000/health`.
+
+### 4. Put HTTPS in front
+
+Do **not** open port 8000 or 11434 to the public internet. Keep the Compose loopback bind, allow inbound 443 at the firewall, and configure Nginx with a valid TLS certificate. `deploy/nginx/puffx.conf` is a starting template: replace `api.example.com`, configure certificate paths, and validate the final Nginx configuration before reload. Use Certbot or your certificate provider to issue and renew certificates. The template does not itself obtain certificates or configure your firewall.
+
+For installation, upgrades, backups, and optional systemd operation see [docs/vps.md](docs/vps.md). Compose already uses `restart: unless-stopped`; systemd is an alternative API process configuration and should not be enabled in parallel with the Compose API on the same port.
+
+## cPanel setup
+
+Read [docs/cpanel.md](docs/cpanel.md) before attempting this. Shared cPanel is often unsuitable for native model inference because it may limit memory, CPU time, background processes, native binaries, or long-running requests.
+
+### Mode A: native inference, only if the host supports it
+
+Ask the hosting provider whether its Python application runner supports Python 3.11+, persistent ASGI/Passenger applications, required packages, writable persistent storage, and enough RAM/CPU/disk for your selected model. Confirm that the host allows Ollama or another compatible runtime to remain running. If any of those requirements are unavailable, the API may start and still fail inference; use gateway mode instead.
+
+If supported:
+
+1. Create a Python application in cPanel and select Python 3.11.
+2. Set its application root to the checked-out project directory.
+3. Install the packages from `requirements.txt` into the virtual environment cPanel creates.
+4. Configure environment variables from `.env.example` in cPanel's application settings; do not expose the `.env` in the web root.
+5. Use the supplied `installers/cpanel/passenger_wsgi.py` entry point where the host's Passenger setup supports it.
+6. Restart the application using cPanel's supported controls and check `/health`.
+7. Test a real inference call; health only confirms that the API can respond.
+
+Do not assume SSH, Docker, root access, daemon permissions, compilation tools, or an unlimited request duration.
+
+### Mode B: cPanel gateway with remote inference
+
+Run the API gateway on cPanel and the model on a separate server reachable over HTTPS. In cPanel's server-side environment settings configure:
+
+- `INFERENCE_BACKEND=remote`
+- `REMOTE_INFERENCE_URL=https://your-ai-server.example` (base URL; the gateway appends `/v1/chat/completions`)
+- `REMOTE_API_KEY=...` (upstream credential)
+- `API_KEY=...` and `ADMIN_PASSWORD=...` for clients/admin access to the cPanel gateway
+
+Restart the app after changing variables. The browser/client sends its Puffx gateway key to cPanel; only the server forwards the upstream credential. The remote AI server must accept requests from cPanel and must itself be secured. Remote mode forwards chat, embeddings, and streaming requests to the configured OpenAI-compatible endpoint.
+
+## Configuration reference
+
+Copy `.env.example` to `.env` in the application root for local/Docker deployments, or enter equivalent values in the hosting provider's protected environment settings.
+
+| Setting | Purpose | Notes |
+|---|---|---|
+| `API_HOST`, `API_PORT` | Intended API bind address and port | Windows launcher currently uses 127.0.0.1:8000; Compose controls container/host binds separately. |
+| `API_KEY` | Static bearer key accepted by client routes | Leave blank only if you intend to authenticate exclusively with generated keys. Protect the environment file. |
+| `ADMIN_USERNAME` | Reserved setting | Current admin routes do not use a username; admin auth currently compares the bearer token to `ADMIN_PASSWORD`. |
+| `ADMIN_PASSWORD` | Protects `/admin/*` routes | Use a unique, high-entropy secret and HTTPS for remote admin access. Empty means admin routes are disabled. |
+| `DATABASE_URL` | SQLite database location | SQLite is implemented. PostgreSQL is not currently supported in the code. |
+| `INFERENCE_BACKEND` | `ollama`, `remote`, or test-only `mock` | Do not use `mock` for real service. |
+| `MODEL_NAME` | Default chat model for Ollama or remote inference | Pull it in Ollama first. Compose overrides the Ollama service URL. |
+| `EMBEDDING_MODEL` | Optional separate model for `/v1/embeddings` | Defaults to `MODEL_NAME`; choose a provider-supported embedding model. |
+| `MODEL_PATH` | Reserved for future direct model-file provider | Ollama does not read this setting. |
+| `OLLAMA_BASE_URL` | Ollama API endpoint | Local default is `http://127.0.0.1:11434`; Compose sets `http://ollama:11434`. |
+| `REMOTE_INFERENCE_URL` | Base URL of the upstream OpenAI-compatible API | Adapter appends `/v1/chat/completions`, `/v1/embeddings`, or `/v1/models`. |
+| `REMOTE_API_KEY` | Upstream bearer credential | Stored server-side; never put it in browser JavaScript. |
+| `RATE_LIMIT` | Public API request limit, e.g. `60/minute` | SQLite fixed-window quota shared by workers using the same database file; keyed by API key, otherwise client IP. |
+| `ADMIN_RATE_LIMIT` | Admin API request limit, e.g. `10/minute` | Separate IP-based limit for admin endpoints; tune for your operator workflow. |
+| `REQUEST_TIMEOUT` | Upstream inference timeout in seconds | Large/slow models may need a larger value. |
+| `MAX_TOKENS` | Maximum accepted output token request | Requests above this value are rejected. |
+| `MAX_REQUEST_BYTES` | Maximum HTTP request body size in bytes | Defaults to 1 MiB; oversized requests return 413. |
+| `LOG_LEVEL` | Python log level | Avoid logging secrets. |
+| `ALLOWED_ORIGINS` | Comma-separated browser origins | Use exact trusted origins; this is not authentication. |
+
+Never commit `.env`. The `.gitignore` excludes it and model/cache/database files by default.
+
+## Use the API
+
+Set a client key on the trusted server making the request. On Windows PowerShell, set the key for the current terminal (replace the placeholder locally; do not paste a real key into a public issue):
+
+```powershell
+$env:PUFFX_API_KEY = "your-api-key"
+$headers = @{ Authorization = "Bearer $env:PUFFX_API_KEY" }
 $body = @{
   model = "qwen2.5:3b"
   messages = @(
@@ -214,7 +352,8 @@ Available endpoints:
 |---|---|---|
 | `GET /health` | None | Reports configured backend and live model discovery. |
 | `GET /v1/models` | Client API bearer key | Lists models returned by the active provider. |
-| `POST /v1/chat/completions` | Client API bearer key | Validates messages and generation limits, then calls the provider. |
+| `POST /v1/chat/completions` | Client API bearer key | Validates messages, generation limits, and supported response formats; `stream=true` streams SSE deltas. |
+| `POST /v1/embeddings` | Client API bearer key | Produces OpenAI-compatible float embeddings for one or more input strings. |
 | `GET /admin/status` | Admin bearer password | Reports backend/model and available models. |
 | `GET /admin/usage` | Admin bearer password | Returns request count, recent endpoint events, and key metadata. |
 | `POST /admin/keys?label=site` | Admin bearer password | Creates a random API key; the secret is returned only in this response. |
@@ -245,7 +384,7 @@ No model files are bundled. Choose a model supported by your inference runtime, 
 - Start: `installers\windows\start.bat` from the repository.
 - Stop: Ctrl+C in the server console.
 - Update Python packages: `installers\windows\update.bat`.
-- Update source: obtain the new private repository revision, review changes, then update your checkout. Back up `.env` and any local database first.
+- Update source: pull the new public repository revision, review changes, then update your checkout. Back up `.env` and any local database first.
 - The Ollama model store is separate from the project folder; do not delete it if you need offline operation.
 
 ### VPS Compose
@@ -292,10 +431,11 @@ Tests use the mock provider and do not download models. A real inference check n
 - API key authentication supports a configured static key and generated/revocable hashed keys. Admin auth is currently a single bearer password.
 - SQLite key/usage storage is implemented. PostgreSQL is not wired.
 - `/health` is unauthenticated and returns the provider's currently discovered models.
-- Streaming compatibility currently buffers a completed response and emits one SSE content chunk followed by a finish chunk; it is not token-by-token streaming.
-- Embeddings are not implemented. `response_format` is accepted by the schema but not guaranteed/enforced by providers.
+- Ollama and remote providers stream chat deltas as they arrive. `stream=true` cannot be combined with structured `response_format`, because full output validation needs a completed response.
+- `/v1/embeddings` accepts one or more strings and returns OpenAI-compatible float vectors. Ollama and compatible remote providers must support embeddings; mock mode does not.
+- `response_format` supports `text`, `json_object`, and `json_schema`; schemas are validated locally and returned output is checked before sending the response.
 - Usage history is request-count based and does not persist billing-grade token accounting.
-- Rate limiting is process-local and IP-based; it is not a distributed or per-key quota.
+- Public API rate limits use a SQLite fixed-window counter shared by API workers on the same database volume, keyed by valid API key or client IP. This is not a multi-host distributed limiter. Admin routes retain SlowAPI per-process/IP limits.
 - Direct GGUF/llama.cpp integration, model install/unload management, Windows service installation, log rotation, and automated HTTPS provisioning are not implemented.
 - `MODEL_PATH` and `ADMIN_USERNAME` are reserved/unused by the current code.
 - Review and harden proxy headers, secrets, HTTPS, host firewall, resource limits, and monitoring before exposing the service to the internet.
