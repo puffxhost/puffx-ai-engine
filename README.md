@@ -386,3 +386,36 @@ Tests use the mock provider and do not download models. A real inference check n
 - Direct GGUF/llama.cpp integration, model install/unload management, Windows service installation, log rotation, and automated HTTPS provisioning are not implemented.
 - `MODEL_PATH` and `ADMIN_USERNAME` are reserved/unused by the current code.
 - Review and harden proxy headers, secrets, HTTPS, host firewall, resource limits, and monitoring before exposing the service to the internet.
+
+## 🛟 Support & Contact
+
+Need help or want to report an issue?
+
+- 🌐 Website: [puffxhost.com/contact](https://puffxhost.com/contact)
+- 📧 Email: [support@puffxhost.in](mailto:support@puffxhost.in)
+- 📞 Call: [+91 8602967573](https://wa.me/918602967573)
+
+## 📜 License
+
+This project’s app code is licensed under the MIT License. See the [LICENSE](LICENSE) file for full details. Model weights have separate license terms; see the model license section above.
+
+## 🙌 Contributing
+
+Contributions are welcome! Fork the repository, make your changes, and submit a pull request.
+
+## ⭐️ Give a Star
+
+If you found this project useful, please consider giving it a star on GitHub to support its development.
+
+## 🔗 About
+
+Type what picture you want, and this app creates it on your computer with AI. Set it up and download the AI model once while online; after that, you can make pictures without internet.
+
+## 🧠 Developed By
+
+**Nitin Mehta**  
+Official site: [puffxhost.com](https://puffxhost.com/)
+
+---
+
+Made with ❤️ by Nitin Mehta.
