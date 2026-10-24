@@ -241,6 +241,7 @@ Copy `.env.example` to `.env` in the application root for local/Docker deploymen
 | `RATE_LIMIT` | SlowAPI request limit, e.g. `60/minute` | Currently in-process and IP-based, not a distributed per-key quota. |
 | `REQUEST_TIMEOUT` | Upstream inference timeout in seconds | Large/slow models may need a larger value. |
 | `MAX_TOKENS` | Maximum accepted output token request | Requests above this value are rejected. |
+| `MAX_REQUEST_BYTES` | Maximum HTTP request body size in bytes | Defaults to 1 MiB; oversized requests return 413. |
 | `LOG_LEVEL` | Python log level | Avoid logging secrets. |
 | `ALLOWED_ORIGINS` | Comma-separated browser origins | Use exact trusted origins; this is not authentication. |
 
@@ -279,9 +280,9 @@ The normal response follows the OpenAI chat-completion shape:
 
 ```json
 {
-  "id": "chatcmpl-puffx",
+  "id": "chatcmpl-<unique-id>",
   "object": "chat.completion",
-  "created": 0,
+  "created": 1730000000,
   "model": "qwen2.5:3b",
   "choices": [
     {
@@ -290,7 +291,7 @@ The normal response follows the OpenAI chat-completion shape:
       "finish_reason": "stop"
     }
   ],
-  "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+  "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30}
 }
 ```
 
@@ -314,7 +315,7 @@ The admin UI is served at `/admin/ui/` by FastAPI. It does not store the admin p
 
 To create a separate key for an application, call `POST /admin/keys?label=application-name` with `Authorization: Bearer <ADMIN_PASSWORD>`. Copy the returned `key` at that time; it is not recoverable later because only its SHA-256 hash is stored. The `id` is safe to use for revocation. Static `API_KEY` is read from protected configuration and is not stored in the keys table.
 
-Usage records are currently basic request counts/timestamps, not billing-grade token accounting. Ollama token counts are returned as zero in the current adapter.
+Usage records are currently basic request counts/timestamps, not billing-grade token accounting. Ollama completion responses report the token counts supplied by Ollama.
 
 ## Models, downloads, and offline use
 
@@ -378,11 +379,10 @@ Tests use the mock provider and do not download models. A real inference check n
 - API key authentication supports a configured static key and generated/revocable hashed keys. Admin auth is currently a single bearer password.
 - SQLite key/usage storage is implemented. PostgreSQL is not wired.
 - `/health` is unauthenticated and returns the provider's currently discovered models.
-- Streaming compatibility currently buffers a completed response and emits one SSE content chunk; it is not token-by-token streaming.
+- Streaming compatibility currently buffers a completed response and emits one SSE content chunk followed by a finish chunk; it is not token-by-token streaming.
 - Embeddings are not implemented. `response_format` is accepted by the schema but not guaranteed/enforced by providers.
-- Ollama usage token counts currently return zero.
+- Usage history is request-count based and does not persist billing-grade token accounting.
 - Rate limiting is process-local and IP-based; it is not a distributed or per-key quota.
 - Direct GGUF/llama.cpp integration, model install/unload management, Windows service installation, log rotation, and automated HTTPS provisioning are not implemented.
 - `MODEL_PATH` and `ADMIN_USERNAME` are reserved/unused by the current code.
 - Review and harden proxy headers, secrets, HTTPS, host firewall, resource limits, and monitoring before exposing the service to the internet.
-
