@@ -284,7 +284,8 @@ Copy `.env.example` to `.env` in the application root for local/Docker deploymen
 | `OLLAMA_BASE_URL` | Ollama API endpoint | Local default is `http://127.0.0.1:11434`; Compose sets `http://ollama:11434`. |
 | `REMOTE_INFERENCE_URL` | Base URL of the upstream OpenAI-compatible API | Remote adapter appends `/v1/chat/completions`. |
 | `REMOTE_API_KEY` | Upstream bearer credential | Stored server-side; never put it in browser JavaScript. |
-| `RATE_LIMIT` | SlowAPI request limit, e.g. `60/minute` | Currently in-process and IP-based, not a distributed per-key quota. |
+| `RATE_LIMIT` | Public API request limit, e.g. `60/minute` | In-process and IP-based, not a distributed per-key quota. |
+| `ADMIN_RATE_LIMIT` | Admin API request limit, e.g. `10/minute` | Separate IP-based limit for admin endpoints; tune for your operator workflow. |
 | `REQUEST_TIMEOUT` | Upstream inference timeout in seconds | Large/slow models may need a larger value. |
 | `MAX_TOKENS` | Maximum accepted output token request | Requests above this value are rejected. |
 | `MAX_REQUEST_BYTES` | Maximum HTTP request body size in bytes | Defaults to 1 MiB; oversized requests return 413. |
@@ -357,7 +358,7 @@ A missing/bad client key returns 401. Invalid request shapes return 422. Provide
 
 ## Admin page and API keys
 
-The admin UI is served at `/admin/ui/` by FastAPI. It includes an animated engine illustration, live backend/model/request cards, model discovery, recent usage, and API-key creation. Motion respects the operating system reduced-motion preference. It uses local HTML/CSS/JavaScript assets and no external image or font service. It does not store the admin password in its source files; enter it for the session when you use the page. Use HTTPS for remote access and limit access through your reverse proxy/firewall.
+The admin UI is served at `/admin/ui/` by FastAPI. It includes an animated engine illustration, live backend/model/request cards, model discovery, recent usage, API-key creation, and key revocation. Motion respects the operating system reduced-motion preference. It uses local HTML/CSS/JavaScript assets and no external image or font service. It does not store the admin password in its source files; enter it for the session when you use the page. Use HTTPS for remote access and limit access through your reverse proxy/firewall.
 
 To create a separate key for an application, call `POST /admin/keys?label=application-name` with `Authorization: Bearer <ADMIN_PASSWORD>`. Copy the returned `key` at that time; it is not recoverable later because only its SHA-256 hash is stored. The `id` is safe to use for revocation. Static `API_KEY` is read from protected configuration and is not stored in the keys table.
 
