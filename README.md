@@ -1,6 +1,9 @@
 # Puffx AI Engine
 ### A self-hosted API gateway for local and remote AI models
 
+![Animated Puffx AI Engine request flow](docs/assets/ai-engine-motion.svg)
+
+
 **Puffx AI Engine gives your application one API address for sending chat prompts to an AI model.** Run the gateway on your own computer or server, then choose where inference happens: on that machine through Ollama, or on a separate OpenAI-compatible inference service. Your app talks to Puffx; Puffx handles client-key authentication, provider routing, and the response.
 
 It is a **gateway**, not an AI model or a hosted chatbot. You bring the model runtime and model weights for local inference, or configure a remote inference service. This separation lets you keep your application integration stable while choosing the inference environment that fits your hardware and privacy needs.
