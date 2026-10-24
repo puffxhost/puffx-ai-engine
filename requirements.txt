@@ -6,3 +6,6 @@ slowapi>=0.1.9,<1
 pytest>=8,<9
 requests>=2.32,<3
 a2wsgi>=1.10,<2
+
+jsonschema>=4.22,<5
+

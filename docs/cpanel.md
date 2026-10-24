@@ -6,4 +6,5 @@ Use cPanel Setup Python App only if the host provides Python 3.11+, a supported 
 
 ## Gateway/proxy
 
-Set `INFERENCE_BACKEND=remote`, `REMOTE_INFERENCE_URL=https://reachable-ai-host`, and `REMOTE_API_KEY` in server-side environment settings. The gateway forwards requests from the server; upstream must be reachable from cPanel. Protect both endpoints with HTTPS and keys. A Windows computer behind NAT is not publicly reachable by default; use a VPN/private overlay or authenticated outbound tunnel instead of exposing a local inference port. Streaming is currently buffered by upstream adapter and emitted as one SSE chunk.
+Set `INFERENCE_BACKEND=remote`, `REMOTE_INFERENCE_URL=https://reachable-ai-host`, and `REMOTE_API_KEY` in server-side environment settings. The gateway forwards requests from the server; upstream must be reachable from cPanel. Protect both endpoints with HTTPS and keys. A Windows computer behind NAT is not publicly reachable by default; use a VPN/private overlay or authenticated outbound tunnel instead of exposing a local inference port. Streaming chat deltas pass through from the upstream adapter as they arrive. The gateway can also forward `/v1/embeddings` when the upstream supports the OpenAI-compatible embeddings API.
+
