@@ -286,7 +286,6 @@ Copy `.env.example` to `.env` in the application root for local/Docker deploymen
 | `REMOTE_API_KEY` | Upstream bearer credential | Stored server-side; never put it in browser JavaScript. |
 | `RATE_LIMIT` | Public API request limit, e.g. `60/minute` | In-process and IP-based, not a distributed per-key quota. |
 | `ADMIN_RATE_LIMIT` | Admin API request limit, e.g. `10/minute` | Separate IP-based limit for admin endpoints; tune for your operator workflow. |
-| `ADMIN_RATE_LIMIT` | Admin API request limit, e.g. `10/minute` | Separate IP-based limit for admin endpoints; tune for your operator workflow. |
 | `REQUEST_TIMEOUT` | Upstream inference timeout in seconds | Large/slow models may need a larger value. |
 | `MAX_TOKENS` | Maximum accepted output token request | Requests above this value are rejected. |
 | `MAX_REQUEST_BYTES` | Maximum HTTP request body size in bytes | Defaults to 1 MiB; oversized requests return 413. |
