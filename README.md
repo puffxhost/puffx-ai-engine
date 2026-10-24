@@ -120,7 +120,7 @@ git clone https://github.com/puffxhost/puffx-ai-engine.git
 Set-Location .\puffx-ai-engine
 ```
 
-This GitHub repository is private. Your GitHub account must have access to clone it. If you already downloaded the repository ZIP, extract it and open PowerShell in the extracted `puffx-ai-engine` folder instead.
+This repository is public. You can clone it over HTTPS without a GitHub login. If you already downloaded the repository ZIP, extract it and open PowerShell in the extracted `puffx-ai-engine` folder instead.
 
 ### 2. Install Python dependencies
 
@@ -188,12 +188,12 @@ docker compose version
 
 Memory and disk requirements depend on model size, quantization, and context length. Leave capacity for the OS, Docker images, model cache, and inference. GPU acceleration is not configured by this Compose file; it requires compatible hardware, drivers, and a matching container runtime.
 
-### 2. Get the private source onto the VPS
+### 2. Get the source onto the VPS
 
-Clone over SSH if your GitHub SSH key has repository access, or use your organization's approved private-repository checkout method:
+Clone the public repository over HTTPS (or use SSH if you have configured a GitHub SSH key):
 
 ```bash
-git clone git@github.com:puffxhost/puffx-ai-engine.git
+git clone https://github.com/puffxhost/puffx-ai-engine.git
 cd puffx-ai-engine
 ```
 
@@ -265,7 +265,7 @@ Run the API gateway on cPanel and the model on a separate server reachable over 
 - `REMOTE_API_KEY=...` (upstream credential)
 - `API_KEY=...` and `ADMIN_PASSWORD=...` for clients/admin access to the cPanel gateway
 
-Restart the app after changing variables. The browser/client sends its Puffx gateway key to cPanel; only the server forwards the upstream credential. The remote AI server must accept requests from cPanel and must itself be secured. Current remote mode forwards chat requests only and buffers streaming responses.
+Restart the app after changing variables. The browser/client sends its Puffx gateway key to cPanel; only the server forwards the upstream credential. The remote AI server must accept requests from cPanel and must itself be secured. Remote mode forwards chat, embeddings, and streaming requests to the configured OpenAI-compatible endpoint.
 
 ## Configuration reference
 
@@ -279,12 +279,13 @@ Copy `.env.example` to `.env` in the application root for local/Docker deploymen
 | `ADMIN_PASSWORD` | Protects `/admin/*` routes | Use a unique, high-entropy secret and HTTPS for remote admin access. Empty means admin routes are disabled. |
 | `DATABASE_URL` | SQLite database location | SQLite is implemented. PostgreSQL is not currently supported in the code. |
 | `INFERENCE_BACKEND` | `ollama`, `remote`, or test-only `mock` | Do not use `mock` for real service. |
-| `MODEL_NAME` | Default Ollama model or remote advertised model | Pull it in Ollama first. Compose overrides the Ollama service URL. |
+| `MODEL_NAME` | Default chat model for Ollama or remote inference | Pull it in Ollama first. Compose overrides the Ollama service URL. |
+| `EMBEDDING_MODEL` | Optional separate model for `/v1/embeddings` | Defaults to `MODEL_NAME`; choose a provider-supported embedding model. |
 | `MODEL_PATH` | Reserved for future direct model-file provider | Ollama does not read this setting. |
 | `OLLAMA_BASE_URL` | Ollama API endpoint | Local default is `http://127.0.0.1:11434`; Compose sets `http://ollama:11434`. |
-| `REMOTE_INFERENCE_URL` | Base URL of the upstream OpenAI-compatible API | Remote adapter appends `/v1/chat/completions`. |
+| `REMOTE_INFERENCE_URL` | Base URL of the upstream OpenAI-compatible API | Adapter appends `/v1/chat/completions`, `/v1/embeddings`, or `/v1/models`. |
 | `REMOTE_API_KEY` | Upstream bearer credential | Stored server-side; never put it in browser JavaScript. |
-| `RATE_LIMIT` | Public API request limit, e.g. `60/minute` | In-process and IP-based, not a distributed per-key quota. |
+| `RATE_LIMIT` | Public API request limit, e.g. `60/minute` | SQLite fixed-window quota shared by workers using the same database file; keyed by API key, otherwise client IP. |
 | `ADMIN_RATE_LIMIT` | Admin API request limit, e.g. `10/minute` | Separate IP-based limit for admin endpoints; tune for your operator workflow. |
 | `REQUEST_TIMEOUT` | Upstream inference timeout in seconds | Large/slow models may need a larger value. |
 | `MAX_TOKENS` | Maximum accepted output token request | Requests above this value are rejected. |
@@ -348,7 +349,8 @@ Available endpoints:
 |---|---|---|
 | `GET /health` | None | Reports configured backend and live model discovery. |
 | `GET /v1/models` | Client API bearer key | Lists models returned by the active provider. |
-| `POST /v1/chat/completions` | Client API bearer key | Validates messages and generation limits, then calls the provider. |
+| `POST /v1/chat/completions` | Client API bearer key | Validates messages, generation limits, and supported response formats; `stream=true` streams SSE deltas. |
+| `POST /v1/embeddings` | Client API bearer key | Produces OpenAI-compatible float embeddings for one or more input strings. |
 | `GET /admin/status` | Admin bearer password | Reports backend/model and available models. |
 | `GET /admin/usage` | Admin bearer password | Returns request count, recent endpoint events, and key metadata. |
 | `POST /admin/keys?label=site` | Admin bearer password | Creates a random API key; the secret is returned only in this response. |
@@ -379,7 +381,7 @@ No model files are bundled. Choose a model supported by your inference runtime, 
 - Start: `installers\windows\start.bat` from the repository.
 - Stop: Ctrl+C in the server console.
 - Update Python packages: `installers\windows\update.bat`.
-- Update source: obtain the new private repository revision, review changes, then update your checkout. Back up `.env` and any local database first.
+- Update source: pull the new public repository revision, review changes, then update your checkout. Back up `.env` and any local database first.
 - The Ollama model store is separate from the project folder; do not delete it if you need offline operation.
 
 ### VPS Compose
@@ -426,10 +428,11 @@ Tests use the mock provider and do not download models. A real inference check n
 - API key authentication supports a configured static key and generated/revocable hashed keys. Admin auth is currently a single bearer password.
 - SQLite key/usage storage is implemented. PostgreSQL is not wired.
 - `/health` is unauthenticated and returns the provider's currently discovered models.
-- Streaming compatibility currently buffers a completed response and emits one SSE content chunk followed by a finish chunk; it is not token-by-token streaming.
-- Embeddings are not implemented. `response_format` is accepted by the schema but not guaranteed/enforced by providers.
+- Ollama and remote providers stream chat deltas as they arrive. `stream=true` cannot be combined with structured `response_format`, because full output validation needs a completed response.
+- `/v1/embeddings` accepts one or more strings and returns OpenAI-compatible float vectors. Ollama and compatible remote providers must support embeddings; mock mode does not.
+- `response_format` supports `text`, `json_object`, and `json_schema`; schemas are validated locally and returned output is checked before sending the response.
 - Usage history is request-count based and does not persist billing-grade token accounting.
-- Rate limiting is process-local and IP-based; it is not a distributed or per-key quota.
+- Public API rate limits use a SQLite fixed-window counter shared by API workers on the same database volume, keyed by valid API key or client IP. This is not a multi-host distributed limiter. Admin routes retain SlowAPI per-process/IP limits.
 - Direct GGUF/llama.cpp integration, model install/unload management, Windows service installation, log rotation, and automated HTTPS provisioning are not implemented.
 - `MODEL_PATH` and `ADMIN_USERNAME` are reserved/unused by the current code.
 - Review and harden proxy headers, secrets, HTTPS, host firewall, resource limits, and monitoring before exposing the service to the internet.
@@ -467,3 +470,4 @@ Official site: [puffxhost.com](https://puffxhost.com/)
 ---
 
 Made with ❤️ by Nitin Mehta.
+
