@@ -239,6 +239,19 @@ Do **not** open port 8000 or 11434 to the public internet. Keep the Compose loop
 
 For installation, upgrades, backups, and optional systemd operation see [docs/vps.md](docs/vps.md). Compose already uses `restart: unless-stopped`; systemd is an alternative API process configuration and should not be enabled in parallel with the Compose API on the same port.
 
+## GitHub Container Registry package
+
+When a GitHub Release is published, the release workflow builds and publishes a multi-architecture container image to GitHub Container Registry (GHCR): **[ghcr.io/puffxhost/puffx-ai-engine](https://github.com/puffxhost/puffx-ai-engine/pkgs/container/puffx-ai-engine)**. Release tags such as `v1.1.0` publish matching `1.1.0`, `1.1`, `1`, and `latest` image tags.
+
+After a release is available, set `PUFFX_IMAGE_TAG=1.1.0` in your deployment `.env`, then pull and start the published API image alongside Ollama:
+
+```bash
+docker compose pull api
+docker compose up -d --no-build
+```
+
+For a source checkout, keep using `docker compose up -d --build`. The image contains the API gateway only; Ollama and its model cache remain separate. Never put API/admin credentials in an image or publish your deployment `.env` file.
+
 ## cPanel setup
 
 Read [docs/cpanel.md](docs/cpanel.md) before attempting this. Shared cPanel is often unsuitable for native model inference because it may limit memory, CPU time, background processes, native binaries, or long-running requests.

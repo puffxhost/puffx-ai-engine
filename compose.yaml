@@ -5,6 +5,7 @@ services:
       - ollama-models:/root/.ollama
     restart: unless-stopped
   api:
+    image: ghcr.io/puffxhost/puffx-ai-engine:${PUFFX_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: deploy/docker/Dockerfile
