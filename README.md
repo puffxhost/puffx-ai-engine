@@ -45,6 +45,10 @@ This repository is an early, usable starter—not a fully audited production pla
 
 ## Contents
 
+- [What Puffx AI Engine includes](#what-puffx-ai-engine-includes)
+- [How a request works](#how-a-request-works)
+- [Choose local or remote inference](#choose-local-or-remote-inference)
+- [Who this project is for](#who-this-project-is-for)
 - [How it is arranged](#how-it-is-arranged)
 - [Choose a deployment mode](#choose-a-deployment-mode)
 - [Windows local setup](#windows-local-setup)
