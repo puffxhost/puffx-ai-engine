@@ -1,8 +1,47 @@
 # Puffx AI Engine
+### A self-hosted API gateway for local and remote AI models
 
-Puffx is a Python API gateway for local or remote language model inference. It exposes a small OpenAI-compatible chat API, uses Ollama for local inference, and can forward requests to another OpenAI-compatible inference server. A lightweight admin page and key management endpoints are included.
+**Puffx AI Engine gives your application one API address for sending chat prompts to an AI model.** Run the gateway on your own computer or server, then choose where inference happens: on that machine through Ollama, or on a separate OpenAI-compatible inference service. Your app talks to Puffx; Puffx handles client-key authentication, provider routing, and the response.
 
-> **Current scope:** This repository is an early, usable starter—not a fully audited production platform. The verified code paths are the FastAPI API, Ollama adapter, remote chat forwarding, SQLite key/usage storage, and an admin dashboard. Read [Current capabilities and limitations](#current-capabilities-and-limitations) before choosing a deployment.
+It is a **gateway**, not an AI model or a hosted chatbot. You bring the model runtime and model weights for local inference, or configure a remote inference service. This separation lets you keep your application integration stable while choosing the inference environment that fits your hardware and privacy needs.
+
+## What Puffx AI Engine includes
+
+| Component | What it does |
+|---|---|
+| OpenAI-compatible chat API | Gives client applications a familiar chat-completions endpoint and model listing. |
+| Ollama provider | Sends prompts to an Ollama runtime you operate, usually on the same computer or in Docker. |
+| Remote provider | Forwards supported chat requests to a separately configured OpenAI-compatible inference endpoint. |
+| Access control | Accepts a configured client `API_KEY` or generated keys; protects admin routes with `ADMIN_PASSWORD`. |
+| Admin dashboard | Shows backend/model status, available models, basic request history, and generated API keys. |
+| SQLite storage | Stores generated-key hashes and basic usage records on the gateway host. |
+
+## How a request works
+
+1. Your app sends a chat request to Puffx's `/v1/chat/completions` endpoint with a Puffx bearer key.
+2. The gateway checks that key and sends the request to the configured inference backend.
+3. Ollama runs the model locally, or the remote provider processes the request on its own infrastructure.
+4. Puffx returns the model response to your app and records a basic usage entry.
+5. You can inspect service status and request history in the admin dashboard.
+
+The admin password is for operating the gateway; client applications should use their API key. Keep both credentials on trusted server-side systems. Never put a secret key into public browser JavaScript or commit it to Git.
+
+## Choose local or remote inference
+
+| Choice | Where the prompt is processed | What you need |
+|---|---|---|
+| **Local with Ollama** | On the computer/server running Ollama | Ollama, a compatible model download, and enough memory/disk for that model |
+| **Remote provider** | On the separately configured inference server | Network access to that server and its credentials configured on the Puffx server |
+
+In local mode, prompts go to the Ollama runtime you operate. In remote mode, prompts are forwarded to the provider you configure, so that provider's privacy, retention, and usage terms apply. Puffx does not bundle model weights or make those policy decisions for you.
+
+## Who this project is for
+
+- Developers who want an OpenAI-style chat endpoint in front of their own Ollama instance.
+- Teams that want to route supported chat requests through a small self-hosted gateway with API keys.
+- People who want to try local model serving on Windows or deploy an API gateway on a VPS.
+
+This repository is an early, usable starter—not a fully audited production platform or a managed AI service. It currently focuses on FastAPI, Ollama, remote chat forwarding, SQLite key/usage storage, and an admin dashboard. Review [Current capabilities and limitations](#current-capabilities-and-limitations) and the deployment security notes before exposing it to other users.
 
 ## Contents
 
